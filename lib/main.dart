@@ -3,6 +3,7 @@ import 'package:parse_server_sdk_flutter/parse_server_sdk_flutter.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Insert Parse code here
   const keyApplicationId = 'ThXBjb9HNe0LhOx8IZDCo4fCdwaewGwwgQVzVTAc';
   const keyClientKey = 'IbY5x4ZF1RCjxi3oHBvOKTvqfC7X4EyMgXUGCHM4';
   const keyParseServerUrl = 'https://parseapi.back4app.com';
@@ -36,21 +37,27 @@ class _TodoAppState extends State<TodoApp> {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        primaryColor: Colors.white,
-        hintColor: Colors.blue[900],
-        scaffoldBackgroundColor: Colors.white,
-      ),
+          primaryColor: Colors.white,
+          hintColor: Colors.black,
+          scaffoldBackgroundColor: Colors.white,
+          appBarTheme: const AppBarTheme(
+              backgroundColor: Color.fromARGB(255, 68, 122, 246))),
       home: Scaffold(
         appBar: AppBar(
           title: const Text('Todo List'),
         ),
-        body: Column(
-          children: [
-            const SizedBox(height: 20),
-            _buildTaskInput(),
-            const SizedBox(height: 20),
-            Expanded(child: _buildTaskList()),
-          ],
+        body: Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.black),
+          ),
+          child: Column(
+            children: [
+              const SizedBox(height: 20),
+              _buildTaskInput(),
+              const SizedBox(height: 20),
+              Expanded(child: _buildTaskList()),
+            ],
+          ),
         ),
       ),
     );
@@ -65,7 +72,7 @@ class _TodoAppState extends State<TodoApp> {
             child: TextField(
               controller: taskController,
               decoration: InputDecoration(
-                hintText: 'EnteR tasks',
+                hintText: 'Enter tasks',
                 filled: true,
                 fillColor: Colors.grey[200],
                 border: OutlineInputBorder(
@@ -78,6 +85,9 @@ class _TodoAppState extends State<TodoApp> {
           const SizedBox(width: 10),
           ElevatedButton(
             onPressed: addTodo,
+            style: ButtonStyle(
+                foregroundColor:
+                    MaterialStateProperty.all<Color>(Colors.black)),
             child: const Text('Add'),
           ),
         ],
@@ -89,6 +99,7 @@ class _TodoAppState extends State<TodoApp> {
     return ListView.builder(
       itemCount: tasks.length,
       itemBuilder: (context, index) {
+        //Get Parse Object Values
         final varTodo = tasks[index];
         final varTitle = varTodo.get<String>('title') ?? '';
         bool done = varTodo.get<bool>('done') ?? false;
@@ -119,6 +130,7 @@ class _TodoAppState extends State<TodoApp> {
   Future<void> addTodo() async {
     String task = taskController.text.trim();
     if (task.isNotEmpty) {
+      // Insert Parse code here
       final todo = ParseObject('Todo')
         ..set('title', task)
         ..set('done', false);
@@ -133,6 +145,7 @@ class _TodoAppState extends State<TodoApp> {
   Future<void> updateTodo(int index, bool done) async {
     final varTodo = tasks[index];
     final String id = varTodo.objectId.toString();
+    // Insert Parse code here
     var todo = ParseObject('Todo')
       ..objectId = id
       ..set('done', done);
@@ -143,6 +156,7 @@ class _TodoAppState extends State<TodoApp> {
   }
 
   Future<List<ParseObject>> getTodo() async {
+    // Insert Parse code here
     QueryBuilder<ParseObject> queryTodo =
         QueryBuilder<ParseObject>(ParseObject('Todo'));
     final ParseResponse apiResponse = await queryTodo.query();
@@ -161,6 +175,7 @@ class _TodoAppState extends State<TodoApp> {
     setState(() {
       tasks.removeAt(index);
     });
+    // Insert Parse code here
     var todo = ParseObject('Todo')..objectId = id;
     await todo.delete();
   }
