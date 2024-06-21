@@ -1,182 +1,294 @@
 import 'package:flutter/material.dart';
 import 'package:parse_server_sdk_flutter/parse_server_sdk_flutter.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Insert Parse code here
-  const keyApplicationId = 'ThXBjb9HNe0LhOx8IZDCo4fCdwaewGwwgQVzVTAc';
-  const keyClientKey = 'IbY5x4ZF1RCjxi3oHBvOKTvqfC7X4EyMgXUGCHM4';
-  const keyParseServerUrl = 'https://parseapi.back4app.com';
+  final keyApplicationId = 'YOUR_APP_ID_HERE';
+  final keyClientKey = 'YOUR_CLIENT_KEY_HERE';
+  final keyParseServerUrl = 'https://parseapi.back4app.com';
 
   await Parse().initialize(keyApplicationId, keyParseServerUrl,
       clientKey: keyClientKey, debug: true);
 
-  runApp(const MaterialApp(home: TodoApp()));
+  runApp(MyApp());
 }
 
-class TodoApp extends StatefulWidget {
-  const TodoApp({super.key});
+class MyApp extends StatelessWidget {
+  Future<bool> hasUserLogged() async {
+    ParseUser? currentUser = await ParseUser.currentUser() as ParseUser?;
+    if (currentUser == null) {
+      return false;
+    }
+    //Checks whether the user's session token is valid
+    final ParseResponse? parseResponse =
+        await ParseUser.getCurrentUserFromServer(currentUser.sessionToken!);
 
-  @override
-  // ignore: library_private_types_in_public_api
-  _TodoAppState createState() => _TodoAppState();
-}
-
-class _TodoAppState extends State<TodoApp> {
-  List<ParseObject> tasks = [];
-  TextEditingController taskController = TextEditingController();
-
-  @override
-  void initState() {
-    super.initState();
-    getTodo();
+    if (parseResponse?.success == null || !parseResponse!.success) {
+      //Invalid session. Logout
+      await currentUser.logout();
+      return false;
+    } else {
+      return true;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false,
+      title: 'Flutter - Sign In with Apple',
       theme: ThemeData(
-          primaryColor: Colors.white,
-          hintColor: Colors.black,
-          scaffoldBackgroundColor: Colors.white,
-          appBarTheme: const AppBarTheme(
-              backgroundColor: Color.fromARGB(255, 68, 122, 246))),
-      home: Scaffold(
-        appBar: AppBar(
-          title: const Text('Todo List'),
-        ),
-        body: Container(
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.black),
-          ),
-          child: Column(
-            children: [
-              const SizedBox(height: 20),
-              _buildTaskInput(),
-              const SizedBox(height: 20),
-              Expanded(child: _buildTaskList()),
-            ],
-          ),
-        ),
+        primarySwatch: Colors.blue,
+        visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
+      home: FutureBuilder<bool>(
+          future: hasUserLogged(),
+          builder: (context, snapshot) {
+            switch (snapshot.connectionState) {
+              case ConnectionState.none:
+              case ConnectionState.waiting:
+                return Scaffold(
+                  body: Center(
+                    child: Container(
+                        width: 100,
+                        height: 100,
+                        child: CircularProgressIndicator()),
+                  ),
+                );
+              default:
+                if (snapshot.hasData && snapshot.data!) {
+                  return UserPage();
+                } else {
+                  return HomePage();
+                }
+            }
+          }),
     );
   }
+}
 
-  Widget _buildTaskInput() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: taskController,
-              decoration: InputDecoration(
-                hintText: 'Enter tasks',
-                filled: true,
-                fillColor: Colors.grey[200],
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide.none,
+class HomePage extends StatefulWidget {
+  @override
+  _HomePageState createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        appBar: AppBar(
+          title: const Text('Flutter - Sign In with Apple'),
+        ),
+        body: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Container(
+                  height: 200,
+                  child: Image.network(
+                      'http://blog.back4app.com/wp-content/uploads/2017/11/logo-b4a-1-768x175-1.png'),
                 ),
-              ),
+                Center(
+                  child: const Text('Flutter on Back4App',
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                ),
+                SizedBox(
+                  height: 100,
+                ),
+                Container(
+                  height: 50,
+                  child: ElevatedButton(
+                    child: const Text('Sign In with Apple'),
+                    onPressed: () => doSignInApple(),
+                  ),
+                ),
+                SizedBox(
+                  height: 16,
+                ),
+              ],
             ),
           ),
-          const SizedBox(width: 10),
-          ElevatedButton(
-            onPressed: addTodo,
-            style: ButtonStyle(
-                foregroundColor:
-                    MaterialStateProperty.all<Color>(Colors.black)),
-            child: const Text('Add'),
-          ),
-        ],
-      ),
-    );
+        ));
   }
 
-  Widget _buildTaskList() {
-    return ListView.builder(
-      itemCount: tasks.length,
-      itemBuilder: (context, index) {
-        //Get Parse Object Values
-        final varTodo = tasks[index];
-        final varTitle = varTodo.get<String>('title') ?? '';
-        bool done = varTodo.get<bool>('done') ?? false;
+  void doSignInApple() async {
+    late ParseResponse parseResponse;
+    try {
+      //Set Scope
+      final credential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+      );
 
-        return ListTile(
-          title: Row(
-            children: [
-              Checkbox(
-                value: done,
-                onChanged: (newValue) {
-                  updateTodo(index, newValue!);
-                },
-              ),
-              Expanded(child: Text(varTitle)),
-            ],
-          ),
-          trailing: IconButton(
-            icon: const Icon(Icons.delete),
+      //https://docs.parseplatform.org/parse-server/guide/#apple-authdata
+      //According to the documentation, we must send a Map with user authentication data.
+      //Make sign in with Apple
+      parseResponse = await ParseUser.loginWith('apple',
+          apple(credential.identityToken!, credential.userIdentifier!));
+
+      if (parseResponse.success) {
+        final ParseUser parseUser = await ParseUser.currentUser() as ParseUser;
+
+        //Additional Information in User
+        if (credential.email != null) {
+          parseUser.emailAddress = credential.email;
+        }
+        if (credential.givenName != null && credential.familyName != null) {
+          parseUser.set<String>(
+              'name', '${credential.givenName} ${credential.familyName}');
+        }
+        parseResponse = await parseUser.save();
+        if (parseResponse.success) {
+          Message.showSuccess(
+              context: context,
+              message: 'User was successfully with Sign In Apple!',
+              onPressed: () async {
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => UserPage()),
+                  (Route<dynamic> route) => false,
+                );
+              });
+        } else {
+          Message.showError(
+              context: context, message: parseResponse.error!.message);
+        }
+      } else {
+        Message.showError(
+            context: context, message: parseResponse.error!.message);
+      }
+    } on Exception catch (e) {
+      print(e.toString());
+      Message.showError(context: context, message: e.toString());
+    }
+  }
+}
+
+class UserPage extends StatelessWidget {
+  Future<ParseUser?> getUser() async {
+    return await ParseUser.currentUser() as ParseUser?;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    void doUserLogout() async {
+      final currentUser = await ParseUser.currentUser() as ParseUser;
+      var response = await currentUser.logout();
+      if (response.success) {
+        Message.showSuccess(
+            context: context,
+            message: 'User was successfully logout!',
             onPressed: () {
-              deleteTodo(index, varTodo.objectId!);
-            },
-          ),
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (context) => HomePage()),
+                (Route<dynamic> route) => false,
+              );
+            });
+      } else {
+        Message.showError(context: context, message: response.error!.message);
+      }
+    }
+
+    return Scaffold(
+        appBar: AppBar(
+          title: Text('Flutter - Sign In with Apple'),
+        ),
+        body: FutureBuilder<ParseUser?>(
+            future: getUser(),
+            builder: (context, snapshot) {
+              switch (snapshot.connectionState) {
+                case ConnectionState.none:
+                case ConnectionState.waiting:
+                  return Center(
+                    child: Container(
+                        width: 100,
+                        height: 100,
+                        child: CircularProgressIndicator()),
+                  );
+                default:
+                  return Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Center(
+                            child: Text(
+                                'Hello, ${snapshot.data!.get<String>('name')}')),
+                        SizedBox(
+                          height: 16,
+                        ),
+                        Container(
+                          height: 50,
+                          child: ElevatedButton(
+                            child: const Text('Logout'),
+                            onPressed: () => doUserLogout(),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+              }
+            }));
+  }
+}
+
+class Message {
+  static void showSuccess(
+      {required BuildContext context,
+      required String message,
+      VoidCallback? onPressed}) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Success!"),
+          content: Text(message),
+          actions: <Widget>[
+            new ElevatedButton(
+              child: const Text("OK"),
+              onPressed: () {
+                Navigator.of(context).pop();
+                if (onPressed != null) {
+                  onPressed();
+                }
+              },
+            ),
+          ],
         );
       },
     );
   }
 
-  Future<void> addTodo() async {
-    String task = taskController.text.trim();
-    if (task.isNotEmpty) {
-      // Insert Parse code here
-      final todo = ParseObject('Todo')
-        ..set('title', task)
-        ..set('done', false);
-      await todo.save();
-      setState(() {
-        tasks.add(todo);
-      });
-      taskController.clear();
-    }
-  }
-
-  Future<void> updateTodo(int index, bool done) async {
-    final varTodo = tasks[index];
-    final String id = varTodo.objectId.toString();
-    // Insert Parse code here
-    var todo = ParseObject('Todo')
-      ..objectId = id
-      ..set('done', done);
-    await todo.save();
-    setState(() {
-      tasks[index] = todo;
-    });
-  }
-
-  Future<List<ParseObject>> getTodo() async {
-    // Insert Parse code here
-    QueryBuilder<ParseObject> queryTodo =
-        QueryBuilder<ParseObject>(ParseObject('Todo'));
-    final ParseResponse apiResponse = await queryTodo.query();
-
-    if (apiResponse.success && apiResponse.results != null) {
-      setState(() {
-        tasks = apiResponse.results as List<ParseObject>;
-      });
-      return tasks;
-    } else {
-      return [];
-    }
-  }
-
-  Future<void> deleteTodo(int index, String id) async {
-    setState(() {
-      tasks.removeAt(index);
-    });
-    // Insert Parse code here
-    var todo = ParseObject('Todo')..objectId = id;
-    await todo.delete();
+  static void showError(
+      {required BuildContext context,
+      required String message,
+      VoidCallback? onPressed}) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Error!"),
+          content: Text(message),
+          actions: <Widget>[
+            new ElevatedButton(
+              child: const Text("OK"),
+              onPressed: () {
+                Navigator.of(context).pop();
+                if (onPressed != null) {
+                  onPressed();
+                }
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 }

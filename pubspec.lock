@@ -65,6 +65,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.2.4"
+  cross_file:
+    dependency: transitive
+    description:
+      name: cross_file
+      sha256: "55d7b444feb71301ef6b8838dbc1ae02e63dd48c8773f3810ff53bb1e2945b32"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.3.4+1"
   crypto:
     dependency: transitive
     description:
@@ -232,14 +240,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.11.0"
-  mime_type:
+  mime:
     dependency: transitive
     description:
-      name: mime_type
-      sha256: "2ad6e67d3d2de9ac0f8ef5352d998fd103cb21351ae8c02fb0c78b079b37d275"
+      name: mime
+      sha256: "2e123074287cc9fd6c09de8336dae606d1ddb88d9ac47358826db698c176a1f2"
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.0"
+    version: "1.0.5"
   nm:
     dependency: transitive
     description:
@@ -268,18 +276,18 @@ packages:
     dependency: transitive
     description:
       name: parse_server_sdk
-      sha256: "838c5c41a8392dc0009ef975cfe2d75945bd1e88a3f761940b4ffd5bb8a4c339"
+      sha256: "15187f1030704c1842b02a6e0f398bfe1e1c46572deac192552ce83438b4ed69"
       url: "https://pub.dev"
     source: hosted
-    version: "5.1.3"
+    version: "6.4.0"
   parse_server_sdk_flutter:
     dependency: "direct main"
     description:
       name: parse_server_sdk_flutter
-      sha256: "2efd7f11bd32dfda26b04f45de94f3f12d900f619d532cd65dae49c5dd1760a0"
+      sha256: "0e073fa3fd0ce0e38c5d8aeeb7c183c8d64b3706ca00d526a1af0d7195c2f014"
       url: "https://pub.dev"
     source: hosted
-    version: "7.0.1"
+    version: "8.0.0"
   path:
     dependency: transitive
     description:
@@ -432,6 +440,30 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.3.2"
+  sign_in_with_apple:
+    dependency: "direct main"
+    description:
+      name: sign_in_with_apple
+      sha256: "5c34c601d6910d7db0077063001ccd9d9329ee58b9038ee07153ffcdd76e91bd"
+      url: "https://pub.dev"
+    source: hosted
+    version: "6.1.1"
+  sign_in_with_apple_platform_interface:
+    dependency: transitive
+    description:
+      name: sign_in_with_apple_platform_interface
+      sha256: c2ef2ce6273fce0c61acd7e9ff5be7181e33d7aa2b66508b39418b786cca2119
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.0"
+  sign_in_with_apple_web:
+    dependency: transitive
+    description:
+      name: sign_in_with_apple_web
+      sha256: c009e9beeb6c376e86aaa154fcc8b4e075d4bad90c56286b9668a51cdb6129ea
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.1.0"
   sky_engine:
     dependency: transitive
     description: flutter
